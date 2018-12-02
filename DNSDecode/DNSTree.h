@@ -4,7 +4,8 @@ using std::string;
 
 typedef struct Node
 {
-	string Name;
+	string name;
+	string ip = "0";
 	Node *child = NULL;
 	Node *brother = NULL;
 }*Tree, TreeNode;
@@ -18,7 +19,7 @@ public:
 	void SaveTreeFile();
 	void ReadTreeFile();
 	void TreeToString();
-	void DNSMatch();
+	void DNSSearch();
 	void DNSInsert();
 	void Display();
 
