@@ -187,7 +187,6 @@ void DNSTree::ReadTreeFile()	//用于从文件中读取域名及ip地址的信息到内存中的函数	
 		fbin.read(IP, Ip_Lenth);		//依次读取已经写在文件中的信息
 		DNSInsert(data, IP);			//调用insert函数，将临时变量中的信息写入树结构里
 		i++;						//i自加，带动读取指针移动
-		cout << i << "  ";
 	}
 	fbin.close();
 
@@ -233,7 +232,7 @@ void DNSTree::DNSDelete() {
 	cout << "请输入要删除的域名：";
 	cin >> data;
 	
-	while (1)									
+	while (1)							//拆分输入的域名				
 	{
 		temp[i++] = data[j++];                    //获取每个'.'之前或结束之前的字符串
 		if (data[j] == '.' || data[j] == '\0')
@@ -248,12 +247,13 @@ void DNSTree::DNSDelete() {
 		if (data[j - 1] == '\0')
 			break;
 	}
+	int sStackNum = s.size();				//存s入栈的个数
 	TreeNode *spnode = NULL;                  //栈顶节点
 	TreeNode *tpnode = TreeHead->child;       //指向的头节点的孩子
 	TreeNode *lastchild = NULL;			   //记录上一个节点
 	deStack.push(TreeHead);
 	while (!s.empty())
-	{
+	{	//将每一层的对应节点入deStack
 		spnode = s.top();
 		while (tpnode != NULL && tpnode->name != spnode->name)
 		{//找到相同层次的域名，若无则为NULL
@@ -265,13 +265,13 @@ void DNSTree::DNSDelete() {
 		}
 		else//不为NULL，则进入下一层，继续匹配下一层次域名
 		{
-			deStack.push(tpnode);
+			deStack.push(tpnode);		//与树中元素匹配到 就入deStack
 			lastchild = tpnode;
 			tpnode = tpnode->child;
 		}
 		s.pop();
 	}
-	if (deStack.size() != s.size() + 1)
+	if (deStack.size() != sStackNum + 1)//deStack多一个头节点，若不相等意味着输入域名在树中不匹配
 	{
 		cout << "删除出错" << endl;
 		return;
