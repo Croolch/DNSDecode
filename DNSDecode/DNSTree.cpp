@@ -185,8 +185,12 @@ void DNSTree::ReadTreeFile()	//用于从文件中读取域名及ip地址的信息到内存中的函数	
 		fbin.seekg(i*(Data_Lenth + Ip_Lenth), ios::beg);	//用于定位输出位置
 		fbin.read(data, Data_Lenth);
 		fbin.read(IP, Ip_Lenth);		//依次读取已经写在文件中的信息
-		DNSInsert(data, IP);			//调用insert函数，将临时变量中的信息写入树结构里
+		if (data[0] != '\0')
+		{
+			DNSInsert(data, IP);	//调用insert函数，将临时变量中的信息写入树结构里
+		}	
 		i++;						//i自加，带动读取指针移动
+		
 	}
 	fbin.close();
 
