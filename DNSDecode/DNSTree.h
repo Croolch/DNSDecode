@@ -2,6 +2,10 @@
 #include <string>
 using std::string;
 
+#define Data_Lenth 50
+
+#define Ip_Lenth 20
+
 typedef struct Node
 {
 	string name;
@@ -16,12 +20,15 @@ public:
 	DNSTree();
 	~DNSTree();
 	void InitTree();
-	void SaveTreeFile();
+	void SaveTreeFile();	//用于向内存中写入新的域名，ip信息的函数
 	void ReadTreeFile();
-	void TreeToString();
 	void DNSSearch();
-	void DNSInsert();
+	void DNSDelete();
+	void DNSInsert(char data[], char IP[]);
+	//void InsertFunc();
 	void Display();
+	void PrintT(Tree p, int n);
+	void TreeToString();
 
 private:
 	Tree TreeHead;
