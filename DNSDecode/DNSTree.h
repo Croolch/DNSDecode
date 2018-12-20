@@ -23,12 +23,13 @@ public:
 	void SaveTreeFile();	//用于向内存中写入新的域名，ip信息的函数
 	void ReadTreeFile();
 	void DNSSearch();
-	void DNSDelete();
+	void DNSDelete(char data[]);
 	void DNSInsert(char data[], char IP[]);
 	//void InsertFunc();
 	void Display();
 	void PrintT(Tree p, int n);
-	void TreeToString();
+	void Destroy();
+	//bool Repeat(char data[]);
 
 private:
 	Tree TreeHead;
