@@ -1,4 +1,5 @@
 #pragma once
+#pragma warning (disable: 4996)
 #include "DNSTree.h"
 #include <iostream>
 #include <stack>
@@ -6,6 +7,8 @@
 #include <fstream>
 #include <iomanip>
 using namespace std;
+#define _CRT_SECURE_NO_DEPRECATE
+#define _CRT_SECURE_NO_WARNINGS
 
 
 DNSTree::DNSTree()
@@ -18,6 +21,7 @@ DNSTree::DNSTree()
 
 DNSTree::~DNSTree()
 {
+	Destroy();
 }
 
 void DNSTree::InitTree()
@@ -25,8 +29,15 @@ void DNSTree::InitTree()
 	char flag = 'y';
 	while (flag == 'y')
 	{	
-		SaveTreeFile();
-		//cout << "继续吗？（y/n）" << endl;
+		char data[50], IP[20];
+		memset(data, '\0', 50);
+		memset(IP, '\0', 20);
+		cout << "请输入要插入的域名：";
+		cin >> data;
+		cout << "请输入要插入的IP：";
+		cin >> IP;
+		DNSInsert(data, IP);
+		cout << "继续吗？（y/n）" << endl;
 		cin >> flag;
 	}
 }
@@ -83,25 +94,26 @@ void DNSTree::DNSInsert(char data[],char IP[])		//输入域名和ip，存在内存里。
 
 void DNSTree::DNSSearch()		//输入一个域名。在内存寻找对应的ip地址
 {
-	char data[50] = { '\0' };
-	cout << "输入域名：";
+	char data[50];
+	memset(data, '\0', 50);
+	cout << "输入需要查找的域名：";
 	cin >> data;
 
 	int i = 0, j = 0;
 	char temp[50];
 	stack<TreeNode*> s;
-	while (1)
+	memset(temp, '\0', 50);
+	while (1)							//拆分输入的域名				
 	{
-		memset(temp, '\0', 50);
 		temp[i++] = data[j++];                    //获取每个'.'之前或结束之前的字符串
 		if (data[j] == '.' || data[j] == '\0')
 		{
 			TreeNode *N = new TreeNode;
 			N->name = temp;						  //并存储到新节点
 			s.push(N);							  //节点存入栈
-			memset(temp, '\0', 50);
 			j++;
 			i = 0;
+			memset(temp, '\0', 50);
 		}
 		if (data[j - 1] == '\0')
 			break;
@@ -141,32 +153,78 @@ void DNSTree::DNSSearch()		//输入一个域名。在内存寻找对应的ip地址
 
 void DNSTree::SaveTreeFile()	//用于向文件中写入新的域名、ip信息的函数	/*作者：郭雨丰*/
 {
-	char data[Data_Lenth];
-	char IP[Ip_Lenth];		//声明两个变量，分别用来临时储存即将写入文件的ip地址和域名
-	memset(data, '\0', 50);
-	memset(IP, '\0', 20);	//初始化
+	fstream file("info.txt", ios::out);		//清空文件
+	//char data[Data_Lenth];
+	//char IP[Ip_Lenth];		//声明两个变量，分别用来临时储存即将写入文件的ip地址和域名
+	//memset(data, '\0', 50);
+	//memset(IP, '\0', 20);	//初始化
 
-	cout << "请输入域名：";	//变量的输入
-	cin >> data;
-	cout << "请输入IP：";
-	cin >> IP;
+	//cout << "请输入域名：";	//变量的输入
+	//cin >> data;
+	//cout << "请输入IP：";
+	//cin >> IP;
 
 	fstream fbin("info.txt", ios::binary | ios::out | ios::app);	//以二进制方式打开文件，在文件末尾添加信息
 	if (!fbin) {													//文件读取正确性的判断
 		cout << "文件读取发生错误" << endl;
 		return;
 	}
-	fbin.write(data, Data_Lenth);	//将信息写入文件
-	fbin.write(IP, Ip_Lenth);
+
+	stack<TreeNode*> cStack;		//该栈中节点进行输出
+	while (TreeHead->child != NULL)
+	{
+		TreeNode *p = TreeHead->child;
+		string domain;
+		string ipS;
+		while (p != NULL)
+		{
+			cStack.push(p);
+			p = p->child;
+		}
+		while (!cStack.empty())
+		{
+			TreeNode *outNode = cStack.top();
+			cStack.pop();
+			if (outNode->ip != "0")//IP赋值给数组
+			{
+				ipS = outNode->ip;
+			}
+			domain = domain + outNode->name + ".";
+
+		}
+		domain = domain.substr(0, domain.length() - 1);
+
+		char data[50];
+		char IP[20];
+		strcpy(data, domain.c_str());
+		strcpy(IP, ipS.c_str());
+
+		fbin.write(data, Data_Lenth);	//将信息写入文件
+		fbin.write(IP, Ip_Lenth);
+
+		DNSDelete(data);
+		cout << domain << "  " << IP << endl;
+	}
+
+
+
+	//fstream fbin("info.txt", ios::binary | ios::out | ios::app);	//以二进制方式打开文件，在文件末尾添加信息
+	//if (!fbin) {													//文件读取正确性的判断
+	//	cout << "文件读取发生错误" << endl;
+	//	return;
+	//}
+	//fbin.write(data, Data_Lenth);	//将信息写入文件
+	//fbin.write(IP, Ip_Lenth);
 
 	fbin.close();			//关闭文件流
-	DNSInsert(data, IP);
+	ReadTreeFile();
 	cout << "写入完成！" << endl;
 	return;
 }
 
 void DNSTree::ReadTreeFile()	//用于从文件中读取域名及ip地址的信息到内存中的函数	/*作者：郭雨丰*/
 {
+	Destroy();
 	char data[Data_Lenth];
 	char IP[Ip_Lenth];		//声明两个变量，分别用来临时储存即将写入文件的ip地址和域名
 	memset(data, '\0', Data_Lenth);
@@ -198,7 +256,6 @@ void DNSTree::ReadTreeFile()	//用于从文件中读取域名及ip地址的信息到内存中的函数	
 
 void DNSTree::Display() {
 	PrintT(TreeHead, 0);
-
 }
 
 void DNSTree::PrintT(Tree p, int n) {
@@ -225,16 +282,15 @@ void DNSTree::PrintT(Tree p, int n) {
 //	DNSInsert(data, IP);
 //}
 
-void DNSTree::DNSDelete() {
-	char data[Data_Lenth];
+void DNSTree::DNSDelete(char data[]) {
 	int i = 0, j = 0;
 	char temp[50];
 	memset(temp, '\0', 50);
-	memset(data, '\0', 50);
+	//memset(data, '\0', 50);
 	stack<TreeNode*> s;
 	stack<TreeNode*> deStack;
-	cout << "请输入要删除的域名：";
-	cin >> data;
+	//cout << "请输入要删除的域名：";
+	//cin >> data;
 	
 	while (1)							//拆分输入的域名				
 	{
@@ -314,22 +370,43 @@ void DNSTree::DNSDelete() {
 	}
 }
 
-void DNSTree::TreeToString() {
-	stack<TreeNode*> bStack;		//存有兄弟节点的节点
+//bool DNSTree::Repeat(char data[]) {
+//	return true;
+//
+//}
+
+void DNSTree::Destroy() {
 	stack<TreeNode*> cStack;		//该栈中节点进行输出
-	TreeNode *p = TreeHead->child;
-	while (p->child != NULL)
+	while (TreeHead->child != NULL)
 	{
-		if (p->brother)
+		TreeNode *p = TreeHead->child;
+		string domain;
+		string IP;
+		while (p != NULL)
 		{
-			bStack.push(p);
+			cStack.push(p);
+			p = p->child;
 		}
+		while (!cStack.empty())
+		{
+			TreeNode *outNode = cStack.top();
+			cStack.pop();
+			if (outNode->ip != "0")//IP赋值给数组
+			{
+				IP = outNode->ip;
+			}
+			domain = domain + outNode->name + ".";
 
-		cStack.push(p);
-		p = p->child;
+		}
+		domain = domain.substr(0, domain.length() - 1);
+
+		char data[50];
+		//cout << domain.data();
+		strcpy(data, domain.c_str());
+		
+		DNSDelete(data);
+		//cout << domain << "  " << IP << endl;
 	}
-
-
 }
 
 void Menu() {
@@ -354,10 +431,13 @@ void Menu() {
 		printf(
 			"******************************************************\n"
 			"*                                                    *\n"
-			"*             1.插入域名                             *\n"
-			"*             2.显示域名树                           *\n"
-			"*             3.从文件读取                           *\n"
-			"*             4.删除域名                             *\n"
+			"*             1.初始化                               *\n"
+			"*             2.插入域名                             *\n"
+			"*             3.显示域名树                           *\n"
+			"*             4.查找域名ip                           *\n"
+			"*             5.删除域名                             *\n"
+			"*             6.从文件恢复信息                       *\n"
+			"*             7.保存信息到文件                       *\n"
 			"*             0.退出程序                             *\n"
 			"*                                                    *\n"
 			"******************************************************\n");
@@ -367,27 +447,43 @@ void Menu() {
 		switch (select)
 		{
 		case 1:
-			T.SaveTreeFile();
+			T.InitTree();
 			break;
 		case 2:
-			T.Display();
+			char data[50],IP[20];
+			memset(data, '\0', 50);
+			memset(IP, '\0', 20);
+			cout << "请输入要插入的域名：";
+			cin >> data;
+			cout << "请输入要插入的IP：";
+			cin >> IP;
+			T.DNSInsert(data, IP);
 			break;
 		case 3:
-			T.ReadTreeFile();
+			T.Display();
 			break;
 		case 4:
-			T.DNSDelete();
+			T.DNSSearch();
+			break;
+		case 5:
+			memset(data, '\0', 50);
+			cout << "请输入要删除的域名：";
+			cin >> data;
+			T.DNSDelete(data);
+			break;
+		case 6:
+			T.ReadTreeFile();
+			break;
+		case 7:
+			T.SaveTreeFile();
+		case 0:
 			break;
 		default:
+			cout << "无效操作" << endl;
 			break;
 		}
 		system("pause");
 		system("cls");
 	}
 	
-}
-
-int main() {
-	Menu();
-	return 0;
 }
